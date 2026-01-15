@@ -14,19 +14,16 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNCIONES DE FORMATO ESPAÑOL ---
+# --- FUNCIÓN DE FORMATO ESPAÑOL (Punto para miles, Coma para decimales) ---
 def f_num(valor):
-    """Formatea miles con punto y decimales con coma solo si existen"""
     if valor is None: return ""
-    # Si es entero, solo puntos en miles
     if valor == int(valor):
         return f"{int(valor):,}".replace(",", ".")
-    # Si tiene decimales, puntos en miles y coma en decimal
     else:
         return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # 1. LISTAS DE DATOS ORIGINALES
-provincias_espana = ["Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "A Coruña", "Cuenca", "Gipuzkoa", "Girona", "Granada", "Guadalajara", "Huelva", "Huesca", "Jaén", "León", "Lleida", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Ourense", "Palencia", "Las Palmas", "Pontevedra", "La Rio_ja", "Salamanca", "Segovia", "Sevilla", "Soria", "Tarragona", "Santa Cruz de Tenerife", "Teruel", "Toledo", "Valencia", "Valladolid", "Bizkaia", "Zamora", "Zaragoza", "Ceuta", "Melilla"]
+provincias_espana = ["Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "A Coruña", "Cuenca", "Gipuzkoa", "Girona", "Granada", "Guadalajara", "Huelva", "Huesca", "Jaén", "León", "Lleida", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Ourense", "Palencia", "Las Palmas", "Pontevedra", "La Rioja", "Salamanca", "Segovia", "Sevilla", "Soria", "Tarragona", "Santa Cruz de Tenerife", "Teruel", "Toledo", "Valencia", "Valladolid", "Bizkaia", "Zamora", "Zaragoza", "Ceuta", "Melilla"]
 
 cultivos_master = {
     '🧄 Aliáceas': ["Ajo", "Cebolla", "Puerro", "Escaluña", "Ajoporro"],
@@ -67,13 +64,13 @@ else:
 if st.button("🚀 GENERAR PLAN COMERCIAL 12 MESES"):
     mult = {"Secano Tradicional": 1, "Regadío Estándar": 1.5, "Intensivo": 2.2, "Superintensivo": 3.5}[sistema_sel]
     
-    # Planes detallados (Ejemplo ampliado)
+    # Datos de ejemplo (puedes completarlos según desees)
     planes = {
         '🌿 Olivar e Higueras': [
             ["Enero", "Poda (Mano de Obra)", 15*ha, "Jornal", 65],
             ["Marzo", "Cupreder (Cobre 50%)", 3*mult*ha, "kg", 11.50],
             ["Mayo", "Karate Zeon (Prays)", 0.15*mult*ha, "L", 120],
-            ["Junio", "YaraVera AMIDAS (Abono)", 200*mult*ha, "kg", 1],
+            ["Junio", "YaraVera AMIDAS (Abono)", 200*mult*ha, "kg", 1.10],
             ["Septiembre", "Cobre Nordox 75", 2*mult*ha, "kg", 14.80],
             ["Noviembre", "Gasóleo Recolección", 100*mult*ha, "L", 1.15]
         ],
@@ -86,13 +83,14 @@ if st.button("🚀 GENERAR PLAN COMERCIAL 12 MESES"):
     }
 
     plan_data = planes.get(grupo_sel, planes['🌿 Olivar e Higueras'])
-    df = pd.DataFrame(plan_data, columns=["Mes", "Tarea / Producto", "Cant. Total", "Unid", "Precio Unit."])
-    df["Subtotal (€)"] = df["Cant. Total"] * df["Precio Unit."]
+    # Se añade (€) al nombre de las columnas de precio
+    df = pd.DataFrame(plan_data, columns=["Mes", "Tarea / Producto", "Cant. Total", "Unid", "Precio Unit. (€)"])
+    df["Subtotal (€)"] = df["Cant. Total"] * df["Precio Unit. (€)"]
     
     # Aplicar formato visual a la tabla
     df_ver = df.copy()
     df_ver["Cant. Total"] = df_ver["Cant. Total"].apply(f_num)
-    df_ver["Precio Unit."] = df_ver["Precio Unit."].apply(f_num)
+    df_ver["Precio Unit. (€)"] = df_ver["Precio Unit. (€)"].apply(f_num)
     df_ver["Subtotal (€)"] = df_ver["Subtotal (€)"].apply(f_num)
     
     st.table(df_ver)
