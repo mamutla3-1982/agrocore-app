@@ -9,125 +9,109 @@ st.set_page_config(page_title="AGROCORE 360", page_icon="🚜", layout="wide")
 st.markdown("""
     <style>
     .main { background-color: #f5f7f9; }
-    div.stButton > button:first-child { background-color: #25D366; color: white; width: 100%; border-radius: 10px; height: 3em; font-weight: bold; }
+    .btn-wa { background-color: #25D366; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-right: 10px; }
+    .btn-pdf { background-color: #31333F; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; cursor: pointer; border: none; }
     th { background-color: #1b5e20 !important; color: white !important; }
+    @media print { .no-print { display: none !important; } .stSidebar { display: none !important; } }
     </style>
     """, unsafe_allow_html=True)
 
-# Función de formato español
 def f_num(valor):
     if valor is None: return ""
-    if valor == int(valor):
-        return f"{int(valor):,}".replace(",", ".")
-    else:
-        return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    if valor == int(valor): return f"{int(valor):,}".replace(",", ".")
+    else: return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-# 1. LISTAS DE DATOS
-provincias_espana = ["Álava", "Albacete", "Alicante", "Almería", "Asturias", "Ávila", "Badajoz", "Baleares", "Barcelona", "Burgos", "Cáceres", "Cádiz", "Cantabria", "Castellón", "Ciudad Real", "Córdoba", "A Coruña", "Cuenca", "Gipuzkoa", "Girona", "Granada", "Guadalajara", "Huelva", "Huesca", "Jaén", "León", "Lleida", "Lugo", "Madrid", "Málaga", "Murcia", "Navarra", "Ourense", "Palencia", "Las Palmas", "Pontevedra", "La Rioja", "Salamanca", "Segovia", "Sevilla", "Soria", "Tarragona", "Santa Cruz de Tenerife", "Teruel", "Toledo", "Valencia", "Valladolid", "Bizkaia", "Zamora", "Zaragoza", "Ceuta", "Melilla"]
-
-cultivos_master = {
-    '🌿 Olivar e Higueras': ["Olivo Picual", "Olivo Arbequina", "Higuera"],
-    '🍎 Frutales': ["Almendro", "Nogal", "Peral", "Manzano", "Cerezo", "Melocotonero"],
-    '🌾 Cereales': ["Trigo", "Cebada", "Avena", "Centeno", "Maíz", "Arroz"],
-    '🍋 Cítricos': ["Limón", "Naranjo", "Mandarino", "Lima", "Pomelo"],
-    '🍷 Vid': ["Uva de mesa", "Uva vinificación"],
-    '🧄 Aliáceas': ["Ajo", "Cebolla", "Puerro"],
-    '🥔 Tubérculos': ["Patata", "Boniato"]
+# 1. BASE DE DATOS TÉCNICA (12 MESES X CULTIVO)
+# Aquí es donde ocurre la magia: cada cultivo tiene su propio "libro" de 12 meses.
+CATALOGO_TECNICO = {
+    '🌿 Olivar e Higueras': [
+        ["Ene", "Poda y aclareo", 15, "Jornal", 65], ["Feb", "Picado de madera", 1, "Ha", 80],
+        ["Mar", "Cupreder (Cobre)", 3, "kg", 11.5], ["Abr", "Roundup Ultra (Herbicida)", 2.5, "L", 18],
+        ["May", "Karate Zeon (Prays)", 0.15, "L", 120], ["Jun", "YaraVera AMIDAS", 300, "kg", 1],
+        ["Jul", "Isabion (Aminoácidos)", 2, "L", 15], ["Ago", "Riego de apoyo", 1, "Ha", 55],
+        ["Sep", "Desvaretado manual", 10, "Jornal", 65], ["Oct", "Cobre Nordox 75", 2, "kg", 14.8],
+        ["Nov", "Gasóleo Recolección", 100, "L", 1.15], ["Dic", "Mantenimiento suelos", 1, "Ha", 40]
+    ],
+    '🌾 Cereales': [
+        ["Ene", "YaraVera (Cobertera)", 250, "kg", 0.95], ["Feb", "Atlantis Flex (Herbicida)", 0.3, "kg", 118],
+        ["Mar", "Puma Super (Avena loca)", 0.8, "L", 42], ["Abr", "Elatus Era (Fungicida)", 0.75, "L", 88],
+        ["May", "Karate Zeon (Garrapatillo)", 0.15, "L", 120], ["Jun", "Cosecha (Maquilero)", 1, "Ha", 135],
+        ["Jul", "Transporte a Silo", 1, "Ha", 45], ["Ago", "Manejo rastrojos", 1, "Ha", 30],
+        ["Sep", "Preparación terreno", 1, "Ha", 55], ["Oct", "Abono Fondo D-Coder", 350, "kg", 1.10],
+        ["Nov", "Semilla Certificada R1", 180, "kg", 0.90], ["Dic", "Herbicida Pre-emergencia", 2, "L", 35]
+    ],
+    '🍋 Cítricos': [
+        ["Ene", "Recolección temprana", 35, "Jornal", 65], ["Feb", "Poda de formación", 20, "Jornal", 65],
+        ["Mar", "Sivanto Prime (Piojo)", 0.7, "L", 78], ["Abr", "Quelatos Hierro (Clorosis)", 3, "kg", 18],
+        ["May", "YaraLiva Nitrabor", 15, "kg", 3], ["Jun", "Abamectina (Ácaros)", 1.2, "L", 30],
+        ["Jul", "Energía Riego", 1, "Ha", 180], ["Ago", "Movento (Cochinilla)", 1.5, "L", 58],
+        ["Sep", "Switch (Fungicida)", 0.8, "kg", 95], ["Oct", "Cobre Nordox", 2, "kg", 14],
+        ["Nov", "Abono Completo YaraMila", 400, "kg", 1.1], ["Dic", "Revisión goteo", 1, "Ha", 45]
+    ],
+    '🍷 Vid': [
+        ["Ene", "Poda en seco", 25, "Jornal", 65], ["Feb", "Atado de sarmientos", 10, "Jornal", 65],
+        ["Mar", "Tratamiento Cobre", 2, "kg", 11.5], ["Abr", "Azufre Microlux (Oidio)", 5, "kg", 5],
+        ["May", "Luna Experience (Mildiu)", 0.6, "L", 95], ["Jun", "Poda en verde", 15, "Jornal", 65],
+        ["Jul", "Vivando (Oidio)", 0.2, "L", 140], ["Ago", "Switch (Botritis)", 0.8, "kg", 95],
+        ["Sep", "Vendimia manual", 45, "Jornal", 65], ["Oct", "Abono de otoño", 300, "kg", 1],
+        ["Nov", "Enmienda orgánica", 1, "Ha", 120], ["Dic", "Análisis de sarmiento", 1, "Ha", 40]
+    ]
 }
 
 # 2. PANEL LATERAL
 with st.sidebar:
     st.title("🚜 AGROCORE 360")
-    prov_sel = st.selectbox("Provincia", sorted(provincias_espana))
-    mun_sel = st.text_input("Municipio", value="Córdoba")
-    st.divider()
+    grupo_sel = st.selectbox("Grupo", list(CATALOGO_TECNICO.keys()))
+    variedad_sel = st.text_input("Variedad", value="Estándar")
+    ha = st.number_input("Hectáreas", min_value=0.1, value=10.0)
     sistema_sel = st.selectbox("Sistema", ["Secano Tradicional", "Regadío Estándar", "Intensivo", "Superintensivo"])
-    grupo_sel = st.selectbox("Grupo", list(cultivos_master.keys()))
-    variedad_sel = st.selectbox("Variedad", cultivos_master[grupo_sel])
-    ha = st.number_input("Hectáreas", min_value=0.1, value=10.0, step=0.1)
     precio_venta = st.number_input("Precio Venta Est. (€/kg)", value=0.65)
     ayuda_base = st.number_input("Ayuda PAC (€/Ha)", value=125.0)
 
-# 3. CABECERA
-st.header(f"Informe Técnico Anual: {variedad_sel}")
-st.write(f"📍 {mun_sel} | {sistema_sel}")
+# 3. GENERACIÓN DEL INFORME
+st.header(f"Informe Anual: {grupo_sel} ({variedad_sel})")
+st.write(f"Configuración para {ha} Hectáreas en sistema {sistema_sel}")
 
-# Alerta de Clima
-prob_lluvia = random.randint(5, 25)
-st.success(f"☀️ CLIMA ÓPTIMO ({f_num(prob_lluvia)}% lluvia): Condiciones excelentes para trabajar.")
+if st.button("🚀 GENERAR PLAN TÉCNICO COMPLETO"):
+    mult = {"Secano Tradicional": 1, "Regadío Estándar": 1.5, "Intensivo": 2.2, "Superintensivo": 3.5}[sistema_sel]
+    
+    # Obtener el plan específico del catálogo
+    plan_base = CATALOGO_TECNICO[grupo_sel]
+    
+    # Calcular cantidades reales para la finca
+    filas_finales = []
+    for mes, prod, cant, unid, precio in plan_base:
+        cant_total = cant * ha if unid in ["Jornal", "kg", "L"] else cant * ha
+        # Si es un producto químico (kg/L), le aplicamos el multiplicador de sistema
+        if unid in ["kg", "L"] and "Gasóleo" not in prod and "Semilla" not in prod:
+            cant_total = cant_total * mult
+            
+        subtotal = cant_total * precio
+        filas_finales.append([mes, prod, cant_total, unid, precio, subtotal])
 
-# 4. MOTOR DE 12 MESES (TODOS RELLENADOS)
-if st.button("🚀 GENERAR PLAN 12 MESES"):
-    m = {"Secano Tradicional": 1, "Regadío Estándar": 1.5, "Intensivo": 2.2, "Superintensivo": 3.5}[sistema_sel]
+    df = pd.DataFrame(filas_finales, columns=["Mes", "Tarea / Producto", "Cant. Total", "Unid", "Precio Unit. (€)", "Subtotal (€)"])
     
-    planes = {
-        '🌿 Olivar e Higueras': [
-            ["Enero", "Poda y limpieza", 15*ha, "Jornal", 65],
-            ["Febrero", "Picado de restos", 1*ha, "Ha", 85],
-            ["Marzo", "Cupreder (Cobre)", 3*m*ha, "kg", 11.5],
-            ["Abril", "Roundup Ultra", 2.5*m*ha, "L", 18],
-            ["Mayo", "Karate Zeon", 0.15*m*ha, "L", 120],
-            ["Junio", "YaraVera AMIDAS", 300*m*ha, "kg", 1],
-            ["Julio", "Riego de apoyo", 1*ha, "Ha", 55],
-            ["Agosto", "Isabion (Aminoac.)", 2*m*ha, "L", 15],
-            ["Septiembre", "Desvaretado", 10*ha, "Jornal", 65],
-            ["Octubre", "Cobre Nordox 75", 2*m*ha, "kg", 14.8],
-            ["Noviembre", "Recolección (Gasóleo)", 100*m*ha, "L", 1.15],
-            ["Diciembre", "Mantenimiento suelos", 1*ha, "Ha", 40]
-        ],
-        '🍎 Frutales': [
-            ["Enero", "Poda Invierno", 25*ha, "Jornal", 65],
-            ["Febrero", "Promanar (Aceite)", 10*m*ha, "L", 8],
-            ["Marzo", "Captan 80", 1.5*m*ha, "kg", 16.5],
-            ["Abril", "Abono Floración", 2*m*ha, "L", 12],
-            ["Mayo", "Coragen", 0.18*m*ha, "L", 220],
-            ["Junio", "YaraLiva Calcinit", 5*m*ha, "kg", 2.1],
-            ["Julio", "Movento (Pulgón)", 1.2*m*ha, "L", 58],
-            ["Agosto", "Aclareo Manual", 15*ha, "Jornal", 65],
-            ["Septiembre", "Vendimia/Cosecha", 40*ha, "Jornal", 65],
-            ["Octubre", "Cobre Post-cosecha", 2*m*ha, "kg", 14],
-            ["Noviembre", "YaraMila Complex", 400*m*ha, "kg", 1.1],
-            ["Diciembre", "Limpieza madera", 1*ha, "Ha", 55]
-        ],
-        '🌾 Cereales': [
-            ["Enero", "YaraVera Cobertera", 250*m*ha, "kg", 1],
-            ["Febrero", "Atlantis Flex", 0.3*m*ha, "kg", 118],
-            ["Marzo", "Puma Super", 0.8*m*ha, "L", 42],
-            ["Abril", "Elatus Era", 0.75*m*ha, "L", 88],
-            ["Mayo", "Insecticida Cereal", 0.2*m*ha, "L", 45],
-            ["Junio", "Cosecha (Maquilero)", 1*ha, "Ha", 135],
-            ["Julio", "Transporte Silo", 1*ha, "Ha", 45],
-            ["Agosto", "Laboreo Rastrojo", 1*ha, "Ha", 35],
-            ["Septiembre", "Preparación Suelo", 1*ha, "Ha", 55],
-            ["Octubre", "Abono Fondo D-Coder", 350*m*ha, "kg", 1.2],
-            ["Noviembre", "Semilla Certificada", 180*ha, "kg", 1.1],
-            ["Diciembre", "Tratamiento Pre-em.", 2*m*ha, "L", 38]
-        ]
-    }
-
-    # Seleccionar plan (si no existe el grupo, usa el de olivar por defecto)
-    plan_data = planes.get(grupo_sel, planes['🌿 Olivar e Higueras'])
-    
-    df = pd.DataFrame(plan_data, columns=["Mes", "Tarea / Producto", "Cant. Total", "Unid", "Precio Unit. (€)"])
-    df["Subtotal (€)"] = df["Cant. Total"] * df["Precio Unit. (€)"]
-    
-    # Formato visual
+    # Tabla con formato español
     df_ver = df.copy()
-    df_ver["Cant. Total"] = df_ver["Cant. Total"].apply(f_num)
-    df_ver["Precio Unit. (€)"] = df_ver["Precio Unit. (€)"].apply(f_num)
-    df_ver["Subtotal (€)"] = df_ver["Subtotal (€)"].apply(f_num)
+    for col in ["Cant. Total", "Precio Unit. (€)", "Subtotal (€)"]:
+        df_ver[col] = df_ver[col].apply(f_num)
     
     st.table(df_ver)
 
     # Balance Final
-    inv_neta = df["Subtotal (€)"].sum() - ((ayuda_base + 65) * ha)
-    rendimientos = {"🍎 Frutales": 25000, "🌿 Olivar e Higueras": 5500, "🌾 Cereales": 4800}
-    prod_est = int(ha * rendimientos.get(grupo_sel, 5000) * (0.6 if "Secano" in sistema_sel else 1.0))
-    ingresos = prod_est * precio_venta
-    beneficio = ingresos - inv_neta
-
+    total_gastos = df["Subtotal (€)"].sum()
+    ingresos_pac = (ayuda_base + 65) * ha
+    gasto_neto = total_gastos - ingresos_pac
+    
     st.divider()
-    c1, c2, c3 = st.columns(3)
-    c1.metric("📦 Cosecha Total", f"{f_num(prod_est)} kg")
-    c2.metric("📉 Gasto Anual", f"{f_num(inv_neta)} €")
-    c3.metric("💰 BENEFICIO", f"{f_num(beneficio)} €")
+    c1, c2 = st.columns(2)
+    c1.metric("📉 Gasto Anual Neto", f"{f_num(gasto_neto)} €")
+    c2.metric("💰 Coste por Hectárea", f"{f_num(gasto_neto/ha)} €/Ha")
+
+    # Botones
+    st.markdown(f'''
+        <div class="no-print">
+            <a href="https://wa.me/?text=Informe+Agrocore+{grupo_sel}" target="_blank" class="btn-wa">🟢 WhatsApp</a>
+            <button onclick="window.print()" class="btn-pdf">📄 Imprimir PDF</button>
+        </div>
+    ''', unsafe_allow_html=True)
